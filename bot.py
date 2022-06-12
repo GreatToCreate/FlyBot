@@ -4,7 +4,6 @@ from discord.ext import commands
 from thefuzz import process
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-GUILD = os.getenv("DISCORD_GUILD")
 BASE_URL = os.getenv("BASE_URL")
 
 bot = commands.Bot(command_prefix="!")
