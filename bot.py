@@ -1,6 +1,7 @@
 import os
 import httpx
 from discord.ext import commands
+import xml.etree.ElementTree as ET
 from thefuzz import process
 
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -28,10 +29,19 @@ CHOICE_MAPPING = {
 }
 
 
+def get_steam_username(steam_id: int) -> str:
+    url = f"https://steamcommunity.com/profiles/{steam_id}/?xml=1"
+    r = httpx.get(url)
+
+    tree = ET.fromstring(r.content)
+
+    return tree.find("steamID").text
+
+
 @bot.command(name="course", help="Get the leaders for a particular course")
 async def send_course_leaderboard(ctx, *args):
     """
-    Gets the top 20 times for a particular course
+    Gets the top 10 times for a particular course
     :param ctx: default parameter that is injected by bot and handles message response
     :param args: will be a list of string arguments (whatever the user typed past !course
     :return:
@@ -41,11 +51,11 @@ async def send_course_leaderboard(ctx, *args):
     course_name, _ = process.extractOne(str_search, CHOICE_MAPPING.keys())
 
     r = httpx.get(f"{BASE_URL}/leaderboards/{course_name}")
-    data = r.json()
+    data = r.json()[:10]
 
     out_str = f"Results for course: {course_name}\n"
     for i, entry in enumerate(data):
-        out_str += f"{i + 1}. {entry['steam_id']} - {entry['time'] / 1000}s\n"
+        out_str += f"{i + 1}. {get_steam_username(entry['steam_id'])} - {entry['time'] / 1000}s\n"
 
     await ctx.send(out_str)
 
@@ -61,10 +71,10 @@ async def send_course_leaderboards(ctx):
     r = httpx.get(f"{BASE_URL}/leaderboards/")
 
     data = r.json()
-    out_str = "Course - Steam ID - Time\n"
+    out_str = "Course - User - Time\n"
 
     for entry in data:
-        out_str += f"{entry['course']} - {entry['steam_id']} - {entry['time'] / 1000}s\n"
+        out_str += f"{entry['course']} - {get_steam_username(entry['steam_id'])} - {entry['time'] / 1000}s\n"
 
     await ctx.send(out_str)
 
@@ -76,7 +86,7 @@ async def send_top_players(ctx):
     :param ctx: default parameter that is injected by bot and handles message response
     :return:
     """
-    out_str = "Username: Points\n"
+    out_str = ""
 
     # Get top 10 entries from endpoint
     r = httpx.get(f"{BASE_URL}/leaders/")
