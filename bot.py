@@ -1,41 +1,19 @@
 import os
+
 import httpx
 from discord.ext import commands
-import xml.etree.ElementTree as ET
 from thefuzz import process
 
-TOKEN = os.getenv("DISCORD_TOKEN")
-BASE_URL = os.getenv("BASE_URL")
+from constants import CHOICE_MAPPING
+from utility.steam_helpers import get_steam_username
 
-bot = commands.Bot(command_prefix="!")
+# Grabbing the specified discord bot token (setup here- https://discordpy.readthedocs.io/en/stable/discord.html)
+TOKEN: str = os.getenv("DISCORD_TOKEN")
 
-CHOICE_MAPPING = {
-    "Hold on to your stomach": 8213737,
-    "Around The Block": 8213732,
-    "Snake": 8310467,
-    "You Have Headlights, Right?": 8237753,
-    "Speed is Only Half the Battle": 8237657,
-    "Thread The Needle": 8310656,
-    "A Gentle Start": 8223418,
-    "You Might Wanna Hold Back a Bit": 8237749,
-    "Crest Loop": 8310286,
-    "Limiter Mastery": 8237754,
-    "Death Valley": 8237751,
-    "Hide and Seek": 8393581,
-    "Ups and Downs": 8393529,
-    "Around the station": 8236361,
-    "Long Road": 8542057,
-    "Mountain Spiral": 8558031
-}
+# Getting the specified URL where a FlyAPI instance is running
+BASE_URL: str = os.getenv("BASE_URL")
 
-
-def get_steam_username(steam_id: int) -> str:
-    url = f"https://steamcommunity.com/profiles/{steam_id}/?xml=1"
-    r = httpx.get(url)
-
-    tree = ET.fromstring(r.content)
-
-    return tree.find("steamID").text
+bot: commands.Bot = commands.Bot(command_prefix="!")
 
 
 @bot.command(name="course", help="Get the leaders for a particular course")
@@ -43,13 +21,15 @@ async def send_course_leaderboard(ctx, *args):
     """
     Gets the top 10 times for a particular course
     :param ctx: default parameter that is injected by bot and handles message response
-    :param args: will be a list of string arguments (whatever the user typed past !course
+    :param args: will be a list of string arguments (whatever the user typed past !course)
     :return:
     """
-    # Fuzzy search on course to resolve proper course id
+    # Fuzzy search on course to resolve proper course name. WIll always return a result from the mapping
+    # Mapping exists as db course lookup is still in flux- may use id (possibly level hash) in the future
     str_search = " ".join(args)
     course_name, _ = process.extractOne(str_search, CHOICE_MAPPING.keys())
 
+    # Getting the result set from the running FlyAPI instance and processing the first 10 results [0,10)
     r = httpx.get(f"{BASE_URL}/leaderboards/{course_name}")
     data = r.json()[:10]
 
@@ -101,11 +81,14 @@ async def send_top_players(ctx):
 @bot.command(name="fdgh", help="Get the overall leaders in Fly Dangerous")
 async def send_github_links(ctx):
     """
-    Returns the various github links relating to Fly Dangerous projects
+    Sends the various github links relating to Fly Dangerous projects
     :param ctx: default parameter that is injected by bot and handles message response
     :return:
     """
-    await ctx.send("https://github.com/jukibom/FlyDangerous")
+
+    await ctx.send("Main Game (Unity): https://github.com/jukibom/FlyDangerous\n"
+                   "Discord Bot: https://github.com/GreatToCreate/FlyBot\n"
+                   "Analytics Runner: https://github.com/GreatToCreate/FlyAnalytics\n")
 
 
 @bot.command(name="calc", help="Explain the calculation methodology for leaders")
@@ -117,7 +100,8 @@ async def send_calc_explanation(ctx):
     """
 
     await ctx.send("NOTE: Calculation is done by sum(points) where points is 200-leaderboard position or count(" \
-                   "leaderboard_entries) - position for courses having fewer than 200 entries")
+                   "leaderboard_entries) - position for courses having fewer than 200 entries\n"
+                   "This calculation is not final, and feedback about it is much appreciated in #suggestions")
 
 
 bot.run(TOKEN)
