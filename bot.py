@@ -1,5 +1,7 @@
 import os
+from typing import Optional
 
+import discord
 import httpx
 from discord.ext import commands
 from thefuzz import process
@@ -29,9 +31,9 @@ async def send_course_leaderboard(ctx, *args):
     str_search = " ".join(args)
     course_name, _ = process.extractOne(str_search, CHOICE_MAPPING.keys())
 
-    # Getting the result set from the running FlyAPI instance and processing the first 10 results [0,10)
-    r = httpx.get(f"{BASE_URL}/leaderboards/{course_name}")
-    data = r.json()[:10]
+    # Getting the result set from the running FlyAPI instance and processing the results
+    r = httpx.get(f"{BASE_URL}/leaderboards/{course_name}?limit=20")
+    data = r.json()
 
     out_str = f"Results for course: {course_name}\n"
     for i, entry in enumerate(data):
@@ -60,17 +62,18 @@ async def send_course_leaderboards(ctx):
 
 
 @bot.command(name="top", help="Get the overall leaders in Fly Dangerous")
-async def send_top_players(ctx):
+async def send_top_players(ctx, limit: Optional[int] = 20):
     """
     Gets the computed top overall rankings for players in Fly Dangerous
+    :param limit: Optional int
     :param ctx: default parameter that is injected by bot and handles message response
     :return:
     """
     out_str = ""
 
-    # Get top 10 entries from endpoint
-    r = httpx.get(f"{BASE_URL}/leaders/")
-    data = r.json()[:10]
+    # Get top 20 entries from endpoint
+    r = httpx.get(f"{BASE_URL}/leaders/?limit={limit}")
+    data = r.json()
 
     for i, entry in enumerate(data):
         out_str += f"{i + 1}. {entry['steam_username']}: {entry['points']}\n"
@@ -87,6 +90,7 @@ async def send_github_links(ctx):
     """
 
     await ctx.send("Main Game (Unity): https://github.com/jukibom/FlyDangerous\n"
+                   "FlyAPI: https://github.com/GreatToCreate/FlyAPI\n"
                    "Discord Bot: https://github.com/GreatToCreate/FlyBot\n"
                    "Analytics Runner: https://github.com/GreatToCreate/FlyAnalytics\n")
 
