@@ -1,7 +1,6 @@
 import os
 from typing import Optional
 
-import discord
 import httpx
 from discord.ext import commands
 from thefuzz import process
@@ -77,6 +76,28 @@ async def send_top_players(ctx, limit: Optional[int] = 20):
 
     for i, entry in enumerate(data):
         out_str += f"{i + 1}. {entry['steam_username']}: {entry['points']}\n"
+
+    await ctx.send(out_str)
+
+
+@bot.command(name="score", help="Get the score for a particular user")
+async def send_user_score(ctx, steam_id):
+    """
+
+    :param ctx:
+    :param user_id: int id of a steam user
+    :return:
+    """
+    out_str = ""
+
+    r = httpx.get(f"{BASE_URL}/leaders/?steam_id={steam_id}")
+    data = r.json()
+
+    if len(data) == 0:
+        await ctx.send(f"No user found with steam id: {steam_id}")
+
+    entry = data[0]
+    out_str += f"{entry['steam_id']}: {entry['points']}\n"
 
     await ctx.send(out_str)
 
