@@ -110,10 +110,10 @@ async def send_github_links(ctx):
     :return:
     """
 
-    await ctx.send("Main Game (Unity): https://github.com/jukibom/FlyDangerous\n"
-                   "FlyAPI: https://github.com/GreatToCreate/FlyAPI\n"
-                   "Discord Bot: https://github.com/GreatToCreate/FlyBot\n"
-                   "Analytics Runner: https://github.com/GreatToCreate/FlyAnalytics\n")
+    await ctx.send("Main Game (Unity): <https://github.com/jukibom/FlyDangerous>\n"
+                   "FlyAPI: <https://github.com/GreatToCreate/FlyAPI>\n"
+                   "Discord Bot: <https://github.com/GreatToCreate/FlyBot>\n"
+                   "Analytics Runner: <https://github.com/GreatToCreate/FlyAnalytics>\n")
 
 
 @bot.command(name="calc", help="Explain the calculation methodology for leaders")
